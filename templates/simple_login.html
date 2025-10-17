@@ -4,154 +4,145 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - IT Business Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 20px;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            width: 100%;
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
             max-width: 400px;
+            width: 100%;
         }
         .login-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .login-header h1 {
-            color: #333;
-            margin: 0;
-            font-size: 28px;
-        }
-        .login-header p {
-            color: #666;
-            margin: 5px 0 0 0;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        input[type="text"]:focus, input[type="password"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
-        }
-        .btn-login {
-            width: 100%;
-            padding: 12px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .login-body {
+            padding: 40px;
+        }
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e3f2fd;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: transform 0.2s;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
         }
         .btn-login:hover {
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-register {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
         }
         .alert {
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            border-radius: 10px;
+            border: none;
+        }
+        .divider {
             text-align: center;
+            margin: 20px 0;
+            position: relative;
         }
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .divider:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #dee2e6;
         }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .default-login {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            text-align: center;
-            font-size: 14px;
-            color: #666;
-        }
-        .default-login strong {
-            color: #333;
-        }
-        .status {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #e3f2fd;
-            border-radius: 5px;
-            color: #1976d2;
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            color: #6c757d;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="login-header">
-            <h1>🏪 IT Business Shop</h1>
-            <p>ระบบจัดการร้าน (Simple Mode)</p>
-        </div>
-
-        <div class="status">
-            ✅ ระบบทำงานปกติ<br>
-            🔄 Connection Pool: Optimized
-        </div>
-
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">
-                        {{ message }}
+        <div class="login-card">
+            <div class="login-header">
+                <h2><i class="fas fa-store"></i> IT Business Shop</h2>
+                <p class="mb-0">ระบบจัดการธุรกิจ</p>
+            </div>
+            <div class="login-body">
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> {{ error }}
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <form method="post">
-            <div class="form-group">
-                <label for="username">ชื่อผู้ใช้:</label>
-                <input type="text" id="username" name="username" value="admin" required>
+                {% endif %}
+                
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-user"></i> ชื่อผู้ใช้</label>
+                        <input type="text" class="form-control" name="username" placeholder="กรอกชื่อผู้ใช้" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-lock"></i> รหัสผ่าน</label>
+                        <input type="password" class="form-control" name="password" placeholder="กรอกรหัสผ่าน" required>
+                    </div>
+                    <button type="submit" class="btn btn-login btn-primary w-100 mb-3">
+                        <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+                    </button>
+                </form>
+                
+                <div class="divider">
+                    <span>หรือ</span>
+                </div>
+                
+                <a href="/register" class="btn btn-register btn-success w-100">
+                    <i class="fas fa-user-plus"></i> สมัครสมาชิกใหม่
+                </a>
+                
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt"></i> ระบบปลอดภัย SSL
+                    </small>
+                </div>
             </div>
-            
-            <div class="form-group">
-                <label for="password">รหัสผ่าน:</label>
-                <input type="password" id="password" name="password" value="admin123" required>
-            </div>
-            
-            <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
-        </form>
-
-        <div class="default-login">
-            <strong>ข้อมูลเริ่มต้น:</strong><br>
-            ชื่อผู้ใช้: <strong>admin</strong><br>
-            รหัสผ่าน: <strong>admin123</strong>
         </div>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
