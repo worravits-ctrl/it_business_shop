@@ -68,8 +68,8 @@
                   <i class="fas fa-edit"></i>
                 </a>
                 <form action="{{ url_for('entry_delete', id=it.id) }}" method="post" style="display: inline;" 
-                      onsubmit="return confirm('ต้องการลบรายการนี้หรือไม่?')">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                      onsubmit="return confirm('ต้องการลบรายการนี้หรือไม่? ID: {{ it.id }}')">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบรายการ ID: {{ it.id }}">
                     <i class="fas fa-trash"></i>
                   </button>
                 </form>

@@ -345,18 +345,24 @@ def entry_edit(id):
 @app.route('/entry/<int:id>/delete', methods=['POST'])
 @login_required
 def entry_delete(id):
+    print(f"DEBUG: Delete request for entry ID: {id}")
     s = Session()
     try:
         e = s.query(Entry).get(id)
+        print(f"DEBUG: Found entry: {e}")
         if e:
+            print(f"DEBUG: Deleting entry: {e.description}")
             s.delete(e)
             s.commit()
+            print(f"DEBUG: Entry deleted successfully")
             flash('ลบรายการเรียบร้อยแล้ว', 'success')
         else:
+            print(f"DEBUG: Entry not found")
             flash('ไม่พบรายการที่ต้องการลบ', 'error')
         s.close()
         return redirect(url_for('entries'))
     except Exception as ex:
+        print(f"DEBUG: Delete error: {str(ex)}")
         s.rollback()
         s.close()
         flash(f'เกิดข้อผิดพลาดในการลบ: {str(ex)}', 'error')
