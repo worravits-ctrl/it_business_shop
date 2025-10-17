@@ -345,16 +345,22 @@ def entry_edit(id):
 @app.route('/entry/<int:id>/delete', methods=['POST'])
 @login_required
 def entry_delete(id):
+    s = Session()
     try:
-        s = Session()
         e = s.query(Entry).get(id)
         if e:
             s.delete(e)
             s.commit()
-            flash('ลบรายการแล้ว')
+            flash('ลบรายการเรียบร้อยแล้ว', 'success')
+        else:
+            flash('ไม่พบรายการที่ต้องการลบ', 'error')
+        s.close()
         return redirect(url_for('entries'))
-    except Exception as e:
-        return f'<h1>Delete Entry Error</h1><p>{str(e)}</p>'
+    except Exception as ex:
+        s.rollback()
+        s.close()
+        flash(f'เกิดข้อผิดพลาดในการลบ: {str(ex)}', 'error')
+        return redirect(url_for('entries'))
 
 @app.route('/export/csv')
 @login_required
@@ -376,28 +382,85 @@ def export_csv():
 @app.route('/import/csv', methods=['GET','POST'])
 @login_required
 def import_csv():
-    try:
-        if request.method=='POST':
-            file = request.files.get('file')
-            if not file:
-                flash('กรุณาเลือกไฟล์')
-                return redirect(url_for('import_csv'))
-            df = pd.read_csv(file)
-            s = Session()
-            for _, row in df.iterrows():
-                try:
-                    d = date.fromisoformat(str(row['date']))
-                except Exception:
-                    continue
-                e = Entry(date=d, type=row['type'], category=row.get('category','อื่นๆ'),
-                          description=row.get('description',''), amount=float(row['amount']), created_by=int(current_user.get_id()))
-                s.add(e)
-            s.commit()
-            flash('นำเข้าข้อมูลสำเร็จ')
-            return redirect(url_for('entries'))
+    if request.method == 'GET':
         return render_template('import_export.html')
+    
+    s = Session()
+    try:
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            flash('กรุณาเลือกไฟล์ CSV', 'error')
+            return redirect(url_for('import_csv'))
+        
+        if not file.filename.lower().endswith('.csv'):
+            flash('กรุณาเลือกไฟล์ .csv เท่านั้น', 'error')
+            return redirect(url_for('import_csv'))
+        
+        # อ่าน CSV file
+        df = pd.read_csv(file, encoding='utf-8-sig')
+        
+        # ตรวจสอบ columns ที่จำเป็น
+        required_columns = ['date', 'type', 'amount']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            flash(f'ไฟล์ CSV ขาดคอลัมน์: {", ".join(missing_columns)}', 'error')
+            return redirect(url_for('import_csv'))
+        
+        imported_count = 0
+        error_count = 0
+        
+        for index, row in df.iterrows():
+            try:
+                # ตรวจสอบวันที่
+                try:
+                    if pd.isna(row['date']):
+                        continue
+                    d = pd.to_datetime(row['date']).date()
+                except Exception:
+                    error_count += 1
+                    continue
+                
+                # ตรวจสอบจำนวนเงิน
+                try:
+                    amount = float(row['amount'])
+                except Exception:
+                    error_count += 1
+                    continue
+                
+                # สร้าง Entry
+                e = Entry(
+                    date=d, 
+                    type=str(row['type']).strip(),
+                    category=str(row.get('category', 'อื่นๆ')).strip(),
+                    description=str(row.get('description', '')).strip(),
+                    amount=amount,
+                    created_by=int(current_user.get_id())
+                )
+                s.add(e)
+                imported_count += 1
+                
+            except Exception as ex:
+                error_count += 1
+                print(f"Error processing row {index}: {ex}")
+                continue
+        
+        s.commit()
+        s.close()
+        
+        if imported_count > 0:
+            flash(f'นำเข้าข้อมูลสำเร็จ {imported_count} รายการ', 'success')
+            if error_count > 0:
+                flash(f'มีข้อผิดพลาด {error_count} รายการ', 'warning')
+        else:
+            flash('ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบไฟล์', 'error')
+        
+        return redirect(url_for('entries'))
+        
     except Exception as e:
-        return f'<h1>Import Error</h1><p>{str(e)}</p>'
+        s.rollback()
+        s.close()
+        flash(f'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: {str(e)}', 'error')
+        return redirect(url_for('import_csv'))
 
 # Routes สำหรับระบบจัดการสมาชิก
 @app.route('/register', methods=['GET', 'POST'])
