@@ -53,15 +53,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Handle delete confirmation
+    // Handle delete confirmation for forms
     const deleteForms = document.querySelectorAll('form[action*="/delete"]');
     deleteForms.forEach(function(form) {
         form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Stop default form submission
+            
             const confirmMessage = form.getAttribute('data-confirm') || 'คุณแน่ใจที่จะลบรายการนี้หรือไม่?';
-            if (!confirm(confirmMessage)) {
-                e.preventDefault();
-                return false;
+            
+            if (confirm(confirmMessage)) {
+                console.log('Form delete confirmed, submitting...');
+                
+                // Submit form manually
+                const formData = new FormData(form);
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log('Form delete response:', response.status);
+                    if (response.ok) {
+                        showToast('ลบรายการเรียบร้อยแล้ว', 'success');
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        showToast('เกิดข้อผิดพลาดในการลบ', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Form delete error:', error);
+                    showToast('เกิดข้อผิดพลาดในการลบ: ' + error, 'error');
+                });
             }
+            
+            return false;
         });
     });
 
