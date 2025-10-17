@@ -25,8 +25,15 @@ Session = scoped_session(sessionmaker(bind=engine))
 
 # Flask app setup
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-it-business-shop-2025')
 app.config['WTF_CSRF_ENABLED'] = False  # ปิด CSRF ชั่วคราวเพื่อทดสอบ
+
+# Production configuration
+if os.environ.get('FLASK_ENV') == 'production':
+    app.config['DEBUG'] = False
+    app.config['TESTING'] = False
+else:
+    app.config['DEBUG'] = True
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -69,6 +76,29 @@ def load_user(user_id):
     except Exception as e:
         print(f"Error loading user: {e}")
         return None
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for Railway"""
+    try:
+        # Test database connection
+        s = Session()
+        user_count = s.query(User).count()
+        s.close()
+        
+        return {
+            'status': 'healthy',
+            'database': 'connected',
+            'users': user_count,
+            'environment': os.environ.get('FLASK_ENV', 'development'),
+            'timestamp': datetime.utcnow().isoformat()
+        }, 200
+    except Exception as e:
+        return {
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }, 500
 
 @app.route('/test')
 def test():
