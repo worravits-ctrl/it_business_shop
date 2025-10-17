@@ -67,16 +67,10 @@
                 <a href="{{ url_for('entry_edit', id=it.id) }}" class="btn btn-sm btn-outline-primary">
                   <i class="fas fa-edit"></i>
                 </a>
-                <!-- Trash button (AJAX) -->
+                <!-- Delete button (Trash only) -->
                 <button onclick="deleteEntry({{ it.id }})" class="btn btn-sm btn-outline-danger" 
                         title="ลบรายการ ID: {{ it.id }}">
                   <i class="fas fa-trash"></i>
-                </button>
-                
-                <!-- X button (AJAX Alternative) -->
-                <button onclick="deleteEntry({{ it.id }})" class="btn btn-sm btn-outline-warning ms-1" 
-                        title="ลบรายการ ID: {{ it.id }} (Alternative)">
-                  <i class="fas fa-times"></i>
                 </button>
               </div>
             </td>
