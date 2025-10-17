@@ -174,8 +174,19 @@ if __name__ == '__main__':
         # ลองใช้ waitress ถ้ามี
         from waitress import serve
         print("✅ Using Waitress WSGI Server")
-        serve(app, host='0.0.0.0', port=port, threads=6)
-    except ImportError:
-        print("⚠️ Waitress not found, using Flask dev server")
+        print(f"🌐 Binding to 0.0.0.0:{port}")
+        serve(app, host='0.0.0.0', port=port, threads=6, cleanup_interval=30, channel_timeout=120)
+    except ImportError as e:
+        print(f"⚠️ Waitress import error: {e}")
         print("💡 Install: pip install waitress")
-        app.run(host='0.0.0.0', port=port, debug=False, threaded=True)
+        print("🔄 Fallback to Flask dev server")
+        app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+    except Exception as e:
+        print(f"❌ Server startup error: {e}")
+        print("🆘 Emergency Flask server")
+        try:
+            app.run(host='0.0.0.0', port=port, debug=True)
+        except Exception as flask_err:
+            print(f"💥 Complete failure: {flask_err}")
+            import sys
+            sys.exit(1)
