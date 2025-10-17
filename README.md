@@ -121,9 +121,46 @@ it_business_shop/
 - **Forms:** WTForms with CSRF protection
 - **Styling:** Sarabun Font (Thai), Modern gradient design
 
+## � Railway Deployment
+
+### Deploy to Railway (Recommended)
+
+1. **Create Railway Account**
+   - Go to [railway.app](https://railway.app)
+   - Sign up with GitHub
+
+2. **Deploy from GitHub**
+   ```bash
+   # Connect your GitHub repository
+   # Railway will automatically detect Python app
+   ```
+
+3. **Add PostgreSQL Database**
+   - In Railway dashboard, click "New"
+   - Select "Database" → "PostgreSQL"
+   - Railway will provide DATABASE_URL automatically
+
+4. **Environment Variables**
+   Set these in Railway dashboard:
+   ```
+   FLASK_ENV=production
+   SECRET_KEY=your-secret-key-here
+   PORT=8000
+   ```
+
+5. **Deploy**
+   - Push to GitHub (Railway auto-deploys)
+   - App will be available at `https://your-app.railway.app`
+
+### Railway Configuration Files
+- `Procfile` - Process definition
+- `railway.json` - Railway configuration
+- `requirements.txt` - Includes PostgreSQL support
+- `runtime.txt` - Python version
+
 ## 🐛 Troubleshooting
 
-### Database Issues
+### Local Development Issues
 หากเกิดปัญหา "no such column":
 ```bash
 python init_member_system.py
@@ -135,6 +172,11 @@ python init_member_system.py
 # แก้ไขในไฟล์ app_main.py บรรทัดสุดท้าย
 app.run(debug=True, host='127.0.0.1', port=8001)
 ```
+
+### Railway Deployment Issues
+- Check Railway logs for errors
+- Ensure DATABASE_URL is set
+- Verify all environment variables
 
 ## 📝 License
 

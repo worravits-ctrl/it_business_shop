@@ -21,6 +21,9 @@ instance/
 business.db
 data.db
 
+# Production
+.railway/
+
 # IDE
 .vscode/
 .idea/
