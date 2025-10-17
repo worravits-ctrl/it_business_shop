@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h1 class="display-6 fw-bold text-primary mb-0">
+      <i class="fas fa-users me-3"></i>จัดการสมาชิก
+    </h1>
+    <p class="text-muted">จัดการข้อมูลสมาชิกในระบบ IT Business Shop</p>
+  </div>
+</div>
+
+<!-- สถิติสมาชิก -->
+<div class="row mb-5">
+  <div class="col-md-3">
+    <div class="card stat-card text-center" style="border-left: 5px solid #059669;">
+      <div class="card-body">
+        <i class="fas fa-users fa-2x text-success mb-3"></i>
+        <h4 class="card-title text-success">{{ total_members }}</h4>
+        <p class="card-text text-muted">สมาชิกทั้งหมด</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card text-center" style="border-left: 5px solid #2563eb;">
+      <div class="card-body">
+        <i class="fas fa-user-check fa-2x text-primary mb-3"></i>
+        <h4 class="card-title text-primary">{{ active_members }}</h4>
+        <p class="card-text text-muted">สมาชิกที่ใช้งานได้</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card text-center" style="border-left: 5px solid #dc2626;">
+      <div class="card-body">
+        <i class="fas fa-user-times fa-2x text-danger mb-3"></i>
+        <h4 class="card-title text-danger">{{ inactive_members }}</h4>
+        <p class="card-text text-muted">สมาชิกที่ถูกระงับ</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card stat-card text-center" style="border-left: 5px solid #d97706;">
+      <div class="card-body">
+        <i class="fas fa-crown fa-2x text-warning mb-3"></i>
+        <h4 class="card-title text-warning">{{ admin_count }}</h4>
+        <p class="card-text text-muted">ผู้ดูแลระบบ</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- เครื่องมือจัดการ -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-search me-2"></i>ค้นหาและจัดการสมาชิก
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" id="searchInput" placeholder="ค้นหาตามชื่อผู้ใช้หรืออีเมล...">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="roleFilter">
+              <option value="">ทุกสถานะ</option>
+              <option value="admin">ผู้ดูแลระบบ</option>
+              <option value="user">ผู้ใช้ทั่วไป</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="statusFilter">
+              <option value="">ทุกสถานะ</option>
+              <option value="true">ใช้งานได้</option>
+              <option value="false">ถูกระงับ</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <a href="{{ url_for('register') }}" class="btn btn-success">
+              <i class="fas fa-user-plus me-2"></i>เพิ่มสมาชิกใหม่
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- รายการสมาชิก -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-list me-2"></i>รายการสมาชิกทั้งหมด
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" id="membersTable">
+            <thead class="table-dark">
+              <tr>
+                <th width="5%">#</th>
+                <th width="20%">ชื่อผู้ใช้</th>
+                <th width="25%">อีเมล</th>
+                <th width="15%">บทบาท</th>
+                <th width="15%">สถานะ</th>
+                <th width="15%">วันที่สมัคร</th>
+                <th width="5%">การจัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in users %}
+              <tr data-user-id="{{ user.id }}" 
+                  data-username="{{ user.username }}" 
+                  data-email="{{ user.email }}" 
+                  data-role="{{ user.role }}"
+                  data-status="{{ user.is_active }}">
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <div class="avatar-sm me-2">
+                      <i class="fas fa-user-circle fa-2x {{ 'text-success' if user.is_active else 'text-muted' }}"></i>
+                    </div>
+                    <div>
+                      <strong>{{ user.username }}</strong>
+                      {% if user.role == 'admin' %}
+                        <span class="badge bg-warning text-dark ms-2">
+                          <i class="fas fa-crown me-1"></i>Admin
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="badge {{ 'bg-warning text-dark' if user.role == 'admin' else 'bg-info' }}">
+                    {{ 'ผู้ดูแลระบบ' if user.role == 'admin' else 'ผู้ใช้ทั่วไป' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge {{ 'bg-success' if user.is_active else 'bg-danger' }}">
+                    {{ 'ใช้งานได้' if user.is_active else 'ถูกระงับ' }}
+                  </span>
+                </td>
+                <td>{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '-' }}</td>
+                <td>
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                      <i class="fas fa-cogs"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      {% if user.is_active %}
+                        <li><a class="dropdown-item text-warning" href="#" onclick="toggleUserStatus({{ user.id }}, false)">
+                          <i class="fas fa-user-times me-2"></i>ระงับการใช้งาน
+                        </a></li>
+                      {% else %}
+                        <li><a class="dropdown-item text-success" href="#" onclick="toggleUserStatus({{ user.id }}, true)">
+                          <i class="fas fa-user-check me-2"></i>เปิดใช้งาน
+                        </a></li>
+                      {% endif %}
+                      
+                      {% if user.role == 'user' %}
+                        <li><a class="dropdown-item text-primary" href="#" onclick="toggleUserRole({{ user.id }}, 'admin')">
+                          <i class="fas fa-crown me-2"></i>เลื่อนเป็น Admin
+                        </a></li>
+                      {% else %}
+                        <li><a class="dropdown-item text-info" href="#" onclick="toggleUserRole({{ user.id }}, 'user')">
+                          <i class="fas fa-user me-2"></i>ลดเป็น User
+                        </a></li>
+                      {% endif %}
+                      
+                      <li><hr class="dropdown-divider"></li>
+                      <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser({{ user.id }})">
+                        <i class="fas fa-trash me-2"></i>ลบสมาชิก
+                      </a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ค้นหาและกรอง
+document.getElementById('searchInput').addEventListener('keyup', filterTable);
+document.getElementById('roleFilter').addEventListener('change', filterTable);
+document.getElementById('statusFilter').addEventListener('change', filterTable);
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const roleFilter = document.getElementById('roleFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#membersTable tbody tr');
+
+    rows.forEach(row => {
+        const username = row.dataset.username.toLowerCase();
+        const email = row.dataset.email.toLowerCase();
+        const role = row.dataset.role;
+        const status = row.dataset.status;
+
+        const matchesSearch = username.includes(searchTerm) || email.includes(searchTerm);
+        const matchesRole = !roleFilter || role === roleFilter;
+        const matchesStatus = !statusFilter || status === statusFilter;
+
+        if (matchesSearch && matchesRole && matchesStatus) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// จัดการสถานะผู้ใช้
+function toggleUserStatus(userId, newStatus) {
+    const action = newStatus ? 'เปิดใช้งาน' : 'ระงับการใช้งาน';
+    
+    if (confirm(`คุณต้องการ${action}ผู้ใช้นี้หรือไม่?`)) {
+        fetch('/admin/toggle_user_status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                is_active: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        });
+    }
+}
+
+// จัดการบทบาทผู้ใช้
+function toggleUserRole(userId, newRole) {
+    const action = newRole === 'admin' ? 'เลื่อนเป็น Admin' : 'ลดเป็น User';
+    
+    if (confirm(`คุณต้องการ${action}หรือไม่?`)) {
+        fetch('/admin/toggle_user_role', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                role: newRole
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        });
+    }
+}
+
+// ลบผู้ใช้
+function deleteUser(userId) {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบสมาชิกนี้? การกระทำนี้ไม่สามารถย้อนกลับได้!')) {
+        fetch('/admin/delete_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        });
+    }
+}
+</script>
+{% endblock %}

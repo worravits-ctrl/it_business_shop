@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IT Business Shop - Finance</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #1e40af;
+      --success-color: #059669;
+      --danger-color: #dc2626;
+      --warning-color: #d97706;
+      --info-color: #0891b2;
+      --light-bg: #f8fafc;
+      --dark-text: #1e293b;
+      --border-color: #e2e8f0;
+    }
+    
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: var(--dark-text);
+    }
+    
+    .main-container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      margin: 20px;
+      overflow: hidden;
+    }
+    
+    .navbar-custom {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      padding: 1rem 2rem;
+      border-bottom: 3px solid rgba(255,255,255,0.1);
+    }
+    
+    .navbar-brand {
+      color: white !important;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    
+    .navbar-nav .nav-link {
+      color: rgba(255,255,255,0.9) !important;
+      font-weight: 500;
+      margin: 0 0.5rem;
+      padding: 0.75rem 1rem !important;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .navbar-nav .nav-link:hover {
+      background: rgba(255,255,255,0.2);
+      color: white !important;
+      transform: translateY(-2px);
+    }
+    
+    .content-area {
+      padding: 2rem;
+      background: var(--light-bg);
+      min-height: calc(100vh - 200px);
+    }
+    
+    .alert {
+      border: none;
+      border-radius: 12px;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .btn {
+      border-radius: 10px;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 2px solid var(--border-color);
+      padding: 0.75rem 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      border-left: 5px solid;
+      transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-4px);
+    }
+    
+    .income-card { border-left-color: var(--success-color); }
+    .expense-card { border-left-color: var(--danger-color); }
+    .profit-card { border-left-color: var(--primary-color); }
+    
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .income-icon { color: var(--success-color); }
+    .expense-icon { color: var(--danger-color); }
+    .profit-icon { color: var(--primary-color); }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #6b7280;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+      letter-spacing: 0.05em;
+    }
+    
+    .table {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+    
+    .table th {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      border: none;
+      padding: 1rem;
+    }
+    
+    .table td {
+      padding: 1rem;
+      vertical-align: middle;
+      border-color: var(--border-color);
+    }
+    
+    .badge {
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+    }
+    
+    .footer {
+      background: var(--dark-text);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+    }
+    
+    @media (max-width: 768px) {
+      .main-container {
+        margin: 10px;
+        border-radius: 10px;
+      }
+      
+      .content-area {
+        padding: 1rem;
+      }
+      
+      .navbar-custom {
+        padding: 1rem;
+      }
+      
+      .stat-card {
+        margin-bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <nav class="navbar navbar-expand-lg navbar-custom">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+          <i class="fas fa-store me-2"></i>IT Business Shop
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-chart-line me-1"></i>Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('entries') }}">
+                <i class="fas fa-list me-1"></i>รายการ
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('entry_new') }}">
+                <i class="fas fa-plus-circle me-1"></i>เพิ่มรายการ
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('import_csv') }}">
+                <i class="fas fa-file-import me-1"></i>นำเข้า/ส่งออก
+              </a>
+            </li>
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('members') }}">
+                <i class="fas fa-users me-1"></i>จัดการสมาชิก
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+          <ul class="navbar-nav">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                {% if current_user.role == 'admin' %}
+                  <span class="badge bg-warning text-dark ms-1">Admin</span>
+                {% endif %}
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#"><i class="fas fa-user-edit me-2"></i>แก้ไขข้อมูล</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                  <i class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ
+                </a></li>
+              </ul>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('login') }}">
+                <i class="fas fa-sign-in-alt me-1"></i>เข้าสู่ระบบ
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="content-area">
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+              <i class="fas fa-info-circle me-2"></i>{{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      
+      {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <p class="mb-0">
+          <i class="fas fa-copyright me-1"></i>2025 IT Business Shop - ระบบจัดการรายรับรายจ่าย
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/main.js"></script>
+</body>
+</html>
