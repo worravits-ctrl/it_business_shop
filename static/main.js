@@ -179,6 +179,43 @@ function deleteEntry(entryId) {
     return false;
 }
 
+// AJAX Delete All Function
+function deleteAllEntries() {
+    if (!confirm('⚠️ คุณแน่ใจที่จะลบรายการทั้งหมดหรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกได้!')) {
+        return false;
+    }
+    
+    // Double confirmation
+    if (!confirm('❗ ยืนยันอีกครั้ง: ลบรายการทั้งหมดจริงหรือ?\n\nข้อมูลทั้งหมดจะหายไปถาวร!')) {
+        return false;
+    }
+    
+    console.log('Attempting to delete all entries');
+    
+    fetch('/entries/delete_all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+    .then(response => {
+        console.log('Delete all response:', response.status);
+        if (response.ok) {
+            showToast('ลบรายการทั้งหมดเรียบร้อยแล้ว', 'success');
+            // Reload page to show updated list
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            showToast('เกิดข้อผิดพลาดในการลบรายการทั้งหมด', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Delete all error:', error);
+        showToast('เกิดข้อผิดพลาดในการลบรายการทั้งหมด: ' + error, 'error');
+    });
+    
+    return false;
+}
+
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;

@@ -8,9 +8,15 @@
     <p class="text-muted">จัดการรายรับ-รายจ่ายของร้าน</p>
   </div>
   <div class="col-md-4 text-end">
-    <a href="{{ url_for('entry_new') }}" class="btn btn-success btn-lg">
-      <i class="fas fa-plus me-2"></i>เพิ่มรายการใหม่
-    </a>
+    <div class="btn-group" role="group">
+      <a href="{{ url_for('entry_new') }}" class="btn btn-success btn-lg">
+        <i class="fas fa-plus me-2"></i>เพิ่มรายการใหม่
+      </a>
+      <button onclick="deleteAllEntries()" class="btn btn-danger btn-lg" 
+              title="ลบรายการทั้งหมด">
+        <i class="fas fa-trash-alt me-2"></i>ลบทั้งหมด
+      </button>
+    </div>
   </div>
 </div>
 

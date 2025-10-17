@@ -368,6 +368,37 @@ def entry_delete(id):
         flash(f'เกิดข้อผิดพลาดในการลบ: {str(ex)}', 'error')
         return redirect(url_for('entries'))
 
+@app.route('/entries/delete_all', methods=['POST'])
+@login_required
+def delete_all_entries():
+    print("DEBUG: Delete all entries request")
+    s = Session()
+    try:
+        # Count entries before deletion
+        total_count = s.query(Entry).count()
+        print(f"DEBUG: Total entries to delete: {total_count}")
+        
+        if total_count == 0:
+            flash('ไม่มีรายการให้ลบ', 'info')
+            return redirect(url_for('entries'))
+        
+        # Delete all entries
+        deleted_count = s.query(Entry).delete()
+        s.commit()
+        s.close()
+        
+        print(f"DEBUG: Deleted {deleted_count} entries successfully")
+        flash(f'ลบรายการทั้งหมดเรียบร้อยแล้ว ({deleted_count} รายการ)', 'success')
+        
+        return redirect(url_for('entries'))
+        
+    except Exception as ex:
+        print(f"DEBUG: Delete all error: {str(ex)}")
+        s.rollback()
+        s.close()
+        flash(f'เกิดข้อผิดพลาดในการลบรายการทั้งหมด: {str(ex)}', 'error')
+        return redirect(url_for('entries'))
+
 @app.route('/export/csv')
 @login_required
 def export_csv():
