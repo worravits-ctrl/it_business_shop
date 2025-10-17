@@ -29,9 +29,12 @@ else:
     DB_PATH = os.path.join(os.path.dirname(__file__), 'business.db')
     engine = create_engine(
         f'sqlite:///{DB_PATH}', 
-        connect_args={"check_same_thread": False},
-        pool_size=1,
-        max_overflow=0
+        connect_args={"check_same_thread": False, "timeout": 60},
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=60,
+        pool_recycle=3600,
+        pool_pre_ping=True
     )
 
 Session = scoped_session(sessionmaker(bind=engine))

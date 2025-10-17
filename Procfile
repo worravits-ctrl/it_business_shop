@@ -1,1 +1,1 @@
-web: python app_main.py
+web: python app_emergency.py
