@@ -53,11 +53,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Confirmation dialogs
-    const deleteButtons = document.querySelectorAll('button[onclick*="confirm"]');
-    deleteButtons.forEach(function(button) {
-        button.addEventListener('click', function(e) {
-            if (!confirm('คุณแน่ใจที่จะลบรายการนี้หรือไม่?')) {
+    // Handle delete confirmation
+    const deleteForms = document.querySelectorAll('form[action*="/delete"]');
+    deleteForms.forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            const confirmMessage = form.getAttribute('data-confirm') || 'คุณแน่ใจที่จะลบรายการนี้หรือไม่?';
+            if (!confirm(confirmMessage)) {
                 e.preventDefault();
                 return false;
             }
@@ -95,6 +96,38 @@ function formatCurrency(amount) {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount);
+}
+
+// AJAX Delete Function
+function deleteEntry(entryId) {
+    if (!confirm(`ต้องการลบรายการ ID: ${entryId} หรือไม่?`)) {
+        return false;
+    }
+    
+    console.log(`Attempting to delete entry ID: ${entryId}`);
+    
+    fetch(`/entry/${entryId}/delete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+    })
+    .then(response => {
+        console.log('Delete response:', response.status);
+        if (response.ok) {
+            showToast('ลบรายการเรียบร้อยแล้ว', 'success');
+            // Reload page to show updated list
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast('เกิดข้อผิดพลาดในการลบ', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Delete error:', error);
+        showToast('เกิดข้อผิดพลาดในการลบ: ' + error, 'error');
+    });
+    
+    return false;
 }
 
 function showToast(message, type = 'info') {

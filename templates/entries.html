@@ -67,12 +67,19 @@
                 <a href="{{ url_for('entry_edit', id=it.id) }}" class="btn btn-sm btn-outline-primary">
                   <i class="fas fa-edit"></i>
                 </a>
+                <!-- Form method -->
                 <form action="{{ url_for('entry_delete', id=it.id) }}" method="post" style="display: inline;" 
-                      onsubmit="return confirm('ต้องการลบรายการนี้หรือไม่? ID: {{ it.id }}')">
-                  <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบรายการ ID: {{ it.id }}">
+                      data-confirm="ต้องการลบรายการนี้หรือไม่? ID: {{ it.id }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="ลบรายการ ID: {{ it.id }} (Form)">
                     <i class="fas fa-trash"></i>
                   </button>
                 </form>
+                
+                <!-- AJAX method -->
+                <button onclick="deleteEntry({{ it.id }})" class="btn btn-sm btn-outline-warning ms-1" 
+                        title="ลบรายการ ID: {{ it.id }} (AJAX)">
+                  <i class="fas fa-times"></i>
+                </button>
               </div>
             </td>
           </tr>
