@@ -243,26 +243,6 @@ def login():
         </html>
         '''
 
-@app.route('/simple-login', methods=['GET', 'POST'])
-def simple_login():
-    """Simple login without complex dependencies"""
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '').strip()
-        
-        print(f"Simple login attempt: {username}")
-        
-        if username == 'admin' and password == 'admin123':
-            # Manual session creation
-            session['user_id'] = 'admin'
-            session['logged_in'] = True
-            print("Simple login successful")
-            return redirect('/emergency-dashboard')
-        else:
-            return render_template('simple_login.html', error='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
-    
-    return render_template('simple_login.html')
-
 @app.route('/emergency-dashboard')
 def emergency_dashboard():
     """Simple dashboard without database dependencies"""
