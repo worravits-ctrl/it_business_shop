@@ -391,124 +391,130 @@ def import_csv():
     if request.method == 'GET':
         return render_template('import_export.html')
     
-    print("DEBUG: CSV Import request received")
-    s = Session()
+    print("DEBUG: Starting CSV import")
     try:
         file = request.files.get('file')
-        print(f"DEBUG: File received: {file}")
-        print(f"DEBUG: Filename: {file.filename if file else 'None'}")
+        print(f"DEBUG: File object: {file}")
         
         if not file or file.filename == '':
-            print("DEBUG: No file selected")
+            print("DEBUG: No file provided")
             flash('กรุณาเลือกไฟล์ CSV', 'error')
             return redirect(url_for('import_csv'))
         
-        if not file.filename.lower().endswith('.csv'):
-            print("DEBUG: File is not CSV")
-            flash('กรุณาเลือกไฟล์ .csv เท่านั้น', 'error')
+        print(f"DEBUG: Processing file: {file.filename}")
+        
+        # Read file content
+        file_content = file.read().decode('utf-8-sig')
+        print(f"DEBUG: File content preview: {file_content[:200]}...")
+        
+        # Parse CSV manually
+        lines = file_content.strip().split('\n')
+        if len(lines) < 2:  # Header + at least 1 data row
+            flash('ไฟล์ CSV ต้องมีอย่างน้อย 2 บรรทัด (header + data)', 'error')
             return redirect(url_for('import_csv'))
         
-        print(f"DEBUG: Reading CSV file: {file.filename}")
-        # อ่าน CSV file ด้วย csv module ธรรมดา
-        try:
-            # Reset file pointer
-            file.seek(0)
-            file_content = file.read().decode('utf-8-sig')
-            print(f"DEBUG: File content length: {len(file_content)}")
-            
-            # Parse CSV
-            csv_reader = csv.DictReader(io.StringIO(file_content))
-            
-            # ตรวจสอบ columns ที่จำเป็น
-            required_columns = ['date', 'type', 'amount']
-            headers = csv_reader.fieldnames
-            print(f"DEBUG: CSV headers: {headers}")
-            
-            if not headers:
-                flash('ไฟล์ CSV ไม่มี header', 'error')
-                return redirect(url_for('import_csv'))
-            
-            missing_columns = [col for col in required_columns if col not in headers]
-            if missing_columns:
-                flash(f'ไฟล์ CSV ขาดคอลัมน์: {", ".join(missing_columns)}', 'error')
-                return redirect(url_for('import_csv'))
-            
-            imported_count = 0
-            error_count = 0
-            
-            print("DEBUG: Starting to process CSV rows")
-            for row_num, row in enumerate(csv_reader, start=1):
+        # Get headers
+        headers = [h.strip() for h in lines[0].split(',')]
+        print(f"DEBUG: Headers: {headers}")
+        
+        # Check required columns
+        required = ['date', 'type', 'amount']
+        missing = [col for col in required if col not in headers]
+        if missing:
+            flash(f'ไฟล์ CSV ขาดคอลัมน์: {", ".join(missing)}', 'error')
+            return redirect(url_for('import_csv'))
+        
+        # Get column indices
+        date_idx = headers.index('date')
+        type_idx = headers.index('type')
+        amount_idx = headers.index('amount')
+        category_idx = headers.index('category') if 'category' in headers else None
+        desc_idx = headers.index('description') if 'description' in headers else None
+        
+        # Process data rows
+        s = Session()
+        imported_count = 0
+        error_count = 0
+        
+        for line_num, line in enumerate(lines[1:], start=2):
+            try:
+                if not line.strip():
+                    continue
+                    
+                values = [v.strip() for v in line.split(',')]
+                print(f"DEBUG: Processing line {line_num}: {values}")
+                
+                # Parse date
                 try:
-                    print(f"DEBUG: Processing row {row_num}: {row}")
-                    
-                    # ตรวจสอบวันที่
-                    try:
-                        if not row['date'] or row['date'].strip() == '':
-                            continue
-                        date_str = row['date'].strip()
-                        d = datetime.strptime(date_str, '%Y-%m-%d').date()
-                    except Exception as date_error:
-                        print(f"DEBUG: Date parse error row {row_num}: {date_error}")
-                        error_count += 1
-                        continue
-                    
-                    # ตรวจสอบจำนวนเงิน
-                    try:
-                        amount = float(row['amount'])
-                    except Exception as amount_error:
-                        print(f"DEBUG: Amount parse error row {row_num}: {amount_error}")
-                        error_count += 1
-                        continue
-                    
-                    # ตรวจสอบ type
-                    entry_type = str(row['type']).strip().lower()
-                    if entry_type not in ['income', 'expense']:
-                        print(f"DEBUG: Invalid type '{entry_type}' in row {row_num}")
-                        error_count += 1
-                        continue
-                    
-                    # สร้าง Entry
-                    e = Entry(
-                        date=d, 
-                        type=entry_type,
-                        category=str(row.get('category', 'อื่นๆ')).strip(),
-                        description=str(row.get('description', '')).strip(),
-                        amount=amount,
-                        created_by=int(current_user.get_id())
-                    )
-                    s.add(e)
-                    imported_count += 1
-                    print(f"DEBUG: Added entry for row {row_num}")
-                    
-                except Exception as ex:
-                    print(f"DEBUG: Error processing row {row_num}: {ex}")
+                    date_str = values[date_idx]
+                    d = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except:
+                    print(f"DEBUG: Invalid date in line {line_num}: {values[date_idx] if len(values) > date_idx else 'missing'}")
                     error_count += 1
                     continue
-            
-        except Exception as csv_error:
-            print(f"DEBUG: CSV processing error: {csv_error}")
-            flash(f'ไม่สามารถประมวลผลไฟล์ CSV ได้: {str(csv_error)}', 'error')
+                
+                # Parse amount
+                try:
+                    amount = float(values[amount_idx])
+                except:
+                    print(f"DEBUG: Invalid amount in line {line_num}: {values[amount_idx] if len(values) > amount_idx else 'missing'}")
+                    error_count += 1
+                    continue
+                
+                # Get type
+                entry_type = values[type_idx].lower() if len(values) > type_idx else ''
+                if entry_type not in ['income', 'expense']:
+                    print(f"DEBUG: Invalid type in line {line_num}: {entry_type}")
+                    error_count += 1
+                    continue
+                
+                # Get optional fields
+                category = values[category_idx] if category_idx and len(values) > category_idx else 'อื่นๆ'
+                description = values[desc_idx] if desc_idx and len(values) > desc_idx else ''
+                
+                # Create entry
+                entry = Entry(
+                    date=d,
+                    type=entry_type,
+                    category=category,
+                    description=description,
+                    amount=amount,
+                    created_by=int(current_user.get_id())
+                )
+                s.add(entry)
+                imported_count += 1
+                print(f"DEBUG: Successfully processed line {line_num}")
+                
+            except Exception as e:
+                print(f"DEBUG: Error in line {line_num}: {e}")
+                error_count += 1
+                continue
+        
+        # Commit changes
+        try:
+            s.commit()
+            print(f"DEBUG: Committed {imported_count} entries")
+        except Exception as e:
+            s.rollback()
+            print(f"DEBUG: Commit error: {e}")
+            flash(f'เกิดข้อผิดพลาดในการบันทึก: {str(e)}', 'error')
             return redirect(url_for('import_csv'))
+        finally:
+            s.close()
         
-        print(f"DEBUG: Committing {imported_count} entries")
-        s.commit()
-        s.close()
-        
-        print(f"DEBUG: Import completed. Success: {imported_count}, Errors: {error_count}")
-        
+        # Show results
         if imported_count > 0:
             flash(f'นำเข้าข้อมูลสำเร็จ {imported_count} รายการ', 'success')
             if error_count > 0:
-                flash(f'มีข้อผิดพลาด {error_count} รายการ', 'warning')
+                flash(f'มีรายการผิดพลาด {error_count} รายการ', 'warning')
         else:
-            flash('ไม่สามารถนำเข้าข้อมูลได้ กรุณาตรวจสอบรูปแบบไฟล์', 'error')
+            flash('ไม่สามารถนำเข้าข้อมูลได้', 'error')
         
         return redirect(url_for('entries'))
         
     except Exception as e:
-        s.rollback()
-        s.close()
-        flash(f'เกิดข้อผิดพลาดในการนำเข้าข้อมูล: {str(e)}', 'error')
+        print(f"DEBUG: General error: {e}")
+        flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
         return redirect(url_for('import_csv'))
 
 # Routes สำหรับระบบจัดการสมาชิก
