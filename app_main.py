@@ -253,12 +253,30 @@ def dashboard():
 def entries():
     try:
         page = int(request.args.get('page', 1))
-        per_page = 10
+        per_page = 20  # เพิ่มจำนวนรายการต่อหน้า
         s = Session()
         total = s.query(Entry).count()
-        items = s.query(Entry).order_by(Entry.date.desc()).offset((page-1)*per_page).limit(per_page).all()
+        
+        # Debug logging
+        print(f"📊 ENTRIES ROUTE DEBUG:")
+        print(f"   Total entries in DB: {total}")
+        print(f"   Page: {page}, Per page: {per_page}")
+        
+        # เปลี่ยนเป็นเรียงตาม created_at ล่าสุดก่อน แล้วค่อย date
+        items = s.query(Entry).order_by(Entry.created_at.desc(), Entry.date.desc()).offset((page-1)*per_page).limit(per_page).all()
+        
+        print(f"   Items retrieved: {len(items)}")
+        if items:
+            print(f"   Latest item: ID:{items[0].id} | {items[0].date} | {items[0].category}")
+        
+        # Flash message แสดงจำนวนรายการทั้งหมด
+        if request.args.get('imported'):
+            flash(f'✅ แสดงรายการทั้งหมด {total} รายการ (รายการใหม่อยู่ด้านบนสุด)', 'info')
+        
+        s.close()
         return render_template('entries.html', items=items, page=page, per_page=per_page, total=total)
     except Exception as e:
+        print(f"❌ ENTRIES ROUTE ERROR: {str(e)}")
         return f'<h1>Entries Error</h1><p>{str(e)}</p>'
 
 @app.route('/entry/new', methods=['GET','POST'])
@@ -322,10 +340,34 @@ def entry_delete(id):
         if e:
             s.delete(e)
             s.commit()
-            flash('ลบรายการแล้ว')
+            flash('✅ ลบรายการแล้ว', 'success')
+        else:
+            flash('❌ ไม่พบรายการที่ต้องการลบ', 'error')
         return redirect(url_for('entries'))
     except Exception as e:
-        return f'<h1>Delete Entry Error</h1><p>{str(e)}</p>'
+        flash(f'❌ เกิดข้อผิดพลาดในการลบ: {str(e)}', 'error')
+        return redirect(url_for('entries'))
+
+@app.route('/delete_all_entries', methods=['POST'])
+@login_required
+def delete_all_entries():
+    try:
+        s = Session()
+        # นับจำนวนรายการก่อนลบ
+        count = s.query(Entry).count()
+        
+        if count == 0:
+            flash('❌ ไม่มีรายการให้ลบ', 'warning')
+        else:
+            # ลบรายการทั้งหมด
+            s.query(Entry).delete()
+            s.commit()
+            flash(f'✅ ลบรายการทั้งหมดแล้ว ({count:,} รายการ)', 'success')
+        
+        return redirect(url_for('entries'))
+    except Exception as e:
+        flash(f'❌ เกิดข้อผิดพลาดในการลบข้อมูลทั้งหมด: {str(e)}', 'error')
+        return redirect(url_for('entries'))
 
 @app.route('/export/csv')
 @login_required
@@ -335,40 +377,188 @@ def export_csv():
         items = s.query(Entry).order_by(Entry.date.desc()).all()
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(['id','date','type','category','description','amount','created_at'])
+        writer.writerow(['date','type','category','description','amount'])
         for it in items:
-            writer.writerow([it.id, it.date.isoformat(), it.type, it.category, it.description, it.amount, it.created_at.isoformat()])
+            writer.writerow([it.date.isoformat(), it.type, it.category, it.description, it.amount])
         output.seek(0)
         return send_file(io.BytesIO(output.getvalue().encode('utf-8-sig')),
-                         mimetype='text/csv', as_attachment=True, download_name='entries.csv')
+                         mimetype='text/csv', as_attachment=True, download_name='รายการธุรกิจ.csv')
     except Exception as e:
-        return f'<h1>Export Error</h1><p>{str(e)}</p>'
+        flash(f'❌ เกิดข้อผิดพลาดในการส่งออก: {str(e)}', 'error')
+        return redirect(url_for('import_csv'))
 
-@app.route('/import/csv', methods=['GET','POST'])
-@login_required
-def import_csv():
+@app.route('/download/sample-csv')
+def download_sample_csv():
+    """ดาวน์โหลดไฟล์ตัวอย่าง CSV"""
     try:
-        if request.method=='POST':
-            file = request.files.get('file')
-            if not file:
-                flash('กรุณาเลือกไฟล์')
-                return redirect(url_for('import_csv'))
-            df = pd.read_csv(file)
-            s = Session()
-            for _, row in df.iterrows():
-                try:
-                    d = date.fromisoformat(str(row['date']))
-                except Exception:
-                    continue
-                e = Entry(date=d, type=row['type'], category=row.get('category','อื่นๆ'),
-                          description=row.get('description',''), amount=float(row['amount']), created_by=int(current_user.get_id()))
-                s.add(e)
-            s.commit()
-            flash('นำเข้าข้อมูลสำเร็จ')
-            return redirect(url_for('entries'))
-        return render_template('import_export.html')
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # เขียน header
+        writer.writerow(['date','type','category','description','amount'])
+        
+        # เขียนข้อมูลตัวอย่าง
+        sample_data = [
+            ['2025-10-18', 'income', 'ถ่ายเอกสาร', 'ถ่ายเอกสาร A4 ขาวดำ 50 แผ่น', '50'],
+            ['2025-10-18', 'income', 'พิมพ์เอกสาร', 'พิมพ์เอกสาร A4 สี 10 แผ่น', '120'],
+            ['2025-10-17', 'expense', 'ค่าวัสดุ', 'ซื้อกระดาษ A4', '300'],
+            ['2025-10-17', 'income', 'บริการอื่นๆ', 'สแกนเอกสาร', '30'],
+            ['2025-10-16', 'expense', 'ค่าหมึก', 'ซื้อหมึกเครื่องพิมพ์', '450']
+        ]
+        
+        for row in sample_data:
+            writer.writerow(row)
+        
+        output.seek(0)
+        return send_file(io.BytesIO(output.getvalue().encode('utf-8-sig')),
+                         mimetype='text/csv', 
+                         as_attachment=True, 
+                         download_name='ตัวอย่างข้อมูล.csv')
     except Exception as e:
-        return f'<h1>Import Error</h1><p>{str(e)}</p>'
+        flash(f'❌ ไม่สามารถสร้างไฟล์ตัวอย่างได้: {str(e)}', 'error')
+        return redirect(url_for('import_csv'))
+
+@app.route('/simple-import')
+def simple_import():
+    """หน้า CSV import แบบง่าย (ไม่ต้อง login)"""
+    print("📄 Simple Import page accessed")
+    with open('simple_import.html', 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/import/csv', methods=['GET', 'POST'])
+@login_required  
+def import_csv():
+    if request.method == 'GET':
+        return render_template('import_export.html')
+    
+    # POST method - นำเข้าข้อมูล CSV
+    print("🔄 CSV IMPORT STARTED")
+    print(f"📊 Request method: {request.method}")
+    print(f"📁 Files in request: {list(request.files.keys())}")
+    print(f"📋 Form data keys: {list(request.form.keys())}")
+    print(f"📦 Content type: {request.content_type}")
+    print(f"📏 Content length: {request.content_length}")
+    
+    try:
+        # 1. ตรวจสอบว่ามีไฟล์หรือไม่
+        if 'file' not in request.files:
+            print("❌ ERROR: No 'file' key in request.files")
+            print(f"❓ Available keys: {list(request.files.keys())}")
+            flash('❌ ไม่พบไฟล์ในคำขอ - โปรดลองอีกครั้ง', 'error')
+            return redirect(url_for('import_csv'))
+        
+        uploaded_file = request.files['file']
+        print(f"📄 Uploaded file: {uploaded_file.filename}")
+        print(f"📊 File object: {type(uploaded_file)}")
+        
+        if not uploaded_file or uploaded_file.filename == '':
+            print("❌ ERROR: No file selected or empty filename")
+            flash('❌ กรุณาเลือกไฟล์ CSV', 'error')
+            return redirect(url_for('import_csv'))
+        
+        # 2. อ่านไฟล์ (รองรับ UTF-8 และ UTF-8-BOM)
+        try:
+            file_content = uploaded_file.read().decode('utf-8-sig')
+        except:
+            file_content = uploaded_file.read().decode('utf-8')
+        
+        # 3. แยกบรรทัด
+        lines = [line.strip() for line in file_content.strip().split('\n') if line.strip()]
+        
+        if len(lines) < 2:
+            flash('❌ ไฟล์ต้องมีอย่างน้อย 2 บรรทัด (header + ข้อมูล)', 'error')
+            return redirect(url_for('import_csv'))
+        
+        # 4. อ่าน header
+        headers = [h.strip().lower() for h in lines[0].split(',')]
+        
+        if 'date' not in headers or 'amount' not in headers:
+            flash('❌ ไฟล์ต้องมีคอลัมน์ "date" และ "amount"', 'error')
+            return redirect(url_for('import_csv'))
+        
+        date_idx = headers.index('date')
+        amount_idx = headers.index('amount')
+        category_idx = headers.index('category') if 'category' in headers else None
+        description_idx = headers.index('description') if 'description' in headers else None
+        
+        # 5. ประมวลผลข้อมูล
+        session = Session()
+        success_count = 0
+        error_count = 0
+        
+        for i, line in enumerate(lines[1:], start=2):
+            try:
+                # แยกคอลัมน์
+                values = [v.strip() for v in line.split(',')]
+                
+                if len(values) <= max(date_idx, amount_idx):
+                    error_count += 1
+                    print(f"บรรทัด {i}: จำนวนคอลัมน์ไม่ถูกต้อง")
+                    continue
+                
+                # วันที่
+                date_str = values[date_idx]
+                entry_date = None
+                
+                # ลองหลายรูปแบบ
+                for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d']:
+                    try:
+                        entry_date = datetime.strptime(date_str, fmt).date()
+                        break
+                    except:
+                        continue
+                
+                if not entry_date:
+                    error_count += 1
+                    print(f"บรรทัด {i}: รูปแบบวันที่ไม่ถูกต้อง: {date_str}")
+                    continue
+                
+                # จำนวนเงิน
+                amount_str = values[amount_idx].replace(',', '')  # ลบคอมม่า
+                amount = float(amount_str)
+                
+                # ประเภท
+                entry_type = 'income' if amount >= 0 else 'expense'
+                amount = abs(amount)
+                
+                # หมวดหมู่และรายละเอียด
+                category = values[category_idx] if category_idx and len(values) > category_idx else 'อื่นๆ'
+                description = values[description_idx] if description_idx and len(values) > description_idx else ''
+                
+                # บันทึกข้อมูล
+                new_entry = Entry(
+                    date=entry_date,
+                    type=entry_type,
+                    category=category,
+                    description=description,
+                    amount=amount,
+                    created_by=int(current_user.get_id())
+                )
+                
+                session.add(new_entry)
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                print(f"บรรทัด {i}: Error - {str(e)}")
+                continue
+        
+        # 6. บันทึกการเปลี่ยนแปลง
+        if success_count > 0:
+            session.commit()
+            flash(f'✅ นำเข้า CSV สำเร็จ {success_count} รายการ' + (f' (ข้าม {error_count} รายการ)' if error_count > 0 else ''), 'success')
+            session.close()
+            # Redirect พร้อม parameter เพื่อแสดงข้อความแจ้งเตือน
+            return redirect(url_for('entries', imported=1))
+        else:
+            flash(f'❌ ไม่สามารถนำเข้าข้อมูลได้ (ข้าม {error_count} รายการ)', 'error')
+            session.close()
+            return redirect(url_for('import_csv'))
+        
+    except Exception as e:
+        print(f"Import CSV Error: {str(e)}")
+        flash(f'❌ เกิดข้อผิดพลาด: {str(e)}', 'error')
+        return redirect(url_for('import_csv'))
 
 # Routes สำหรับระบบจัดการสมาชิก
 @app.route('/register', methods=['GET', 'POST'])
@@ -509,6 +699,171 @@ def delete_user():
             return jsonify({'success': False, 'message': 'ไม่พบผู้ใช้'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+# CSV Import Route ใหม่
+@app.route('/csv-import', methods=['GET'])
+@login_required
+def csv_import_page():
+    """แสดงหน้า CSV Import"""
+    return render_template('csv_import.html')
+
+@app.route('/csv-import', methods=['POST'])
+@login_required
+def csv_import():
+    """ประมวลผลการนำเข้า CSV"""
+    try:
+        # ตรวจสอบไฟล์
+        if 'csvfile' not in request.files:
+            return jsonify({'success': False, 'message': 'ไม่พบไฟล์'})
+        
+        file = request.files['csvfile']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'กรุณาเลือกไฟล์'})
+        
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'success': False, 'message': 'กรุณาเลือกไฟล์ .csv'})
+        
+        # อ่านไฟล์
+        file_content = file.read()
+        
+        # ลอง decode หลาย encoding
+        text_content = None
+        for encoding in ['utf-8-sig', 'utf-8', 'cp874', 'windows-1252', 'iso-8859-1']:
+            try:
+                text_content = file_content.decode(encoding)
+                break
+            except UnicodeDecodeError:
+                continue
+        
+        if not text_content:
+            return jsonify({'success': False, 'message': 'ไม่สามารถอ่านไฟล์ได้'})
+        
+        # แยกบรรทัด
+        lines = [line.strip() for line in text_content.strip().split('\n') if line.strip()]
+        if len(lines) < 2:
+            return jsonify({'success': False, 'message': 'ไฟล์ต้องมีข้อมูลอย่างน้อย 2 บรรทัด'})
+        
+        # อ่าน header
+        headers = [h.strip().lower() for h in lines[0].split(',')]
+        
+        # ตรวจสอบคอลัมน์ที่จำเป็น
+        if 'date' not in headers or 'amount' not in headers:
+            return jsonify({'success': False, 'message': 'ไฟล์ต้องมีคอลัมน์ date และ amount'})
+        
+        # หา index ของแต่ละคอลัมน์
+        date_idx = headers.index('date')
+        amount_idx = headers.index('amount')
+        type_idx = headers.index('type') if 'type' in headers else None
+        category_idx = headers.index('category') if 'category' in headers else None
+        desc_idx = headers.index('description') if 'description' in headers else None
+        
+        # ประมวลผลข้อมูล
+        s = Session()
+        success_count = 0
+        error_count = 0
+        
+        for line_no, line in enumerate(lines[1:], 2):
+            try:
+                # แยกค่า CSV (รองรับ quotes)
+                values = []
+                current = ''
+                in_quotes = False
+                
+                for char in line:
+                    if char == '"':
+                        in_quotes = not in_quotes
+                    elif char == ',' and not in_quotes:
+                        values.append(current.strip().strip('"'))
+                        current = ''
+                    else:
+                        current += char
+                values.append(current.strip().strip('"'))
+                
+                if len(values) < max(date_idx, amount_idx) + 1:
+                    error_count += 1
+                    continue
+                
+                # ดึงข้อมูล
+                date_str = values[date_idx].strip()
+                amount_str = values[amount_idx].strip()
+                
+                if not date_str or not amount_str:
+                    error_count += 1
+                    continue
+                
+                # แปลงวันที่
+                entry_date = None
+                for fmt in ['%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d']:
+                    try:
+                        entry_date = datetime.strptime(date_str, fmt).date()
+                        break
+                    except ValueError:
+                        continue
+                
+                if not entry_date:
+                    error_count += 1
+                    continue
+                
+                # แปลงจำนวนเงิน
+                try:
+                    amount = float(amount_str.replace(',', ''))
+                    original_amount = amount
+                    amount = abs(amount)
+                except:
+                    error_count += 1
+                    continue
+                
+                # กำหนดประเภท
+                if type_idx is not None and type_idx < len(values):
+                    entry_type = values[type_idx].strip().lower()
+                    if entry_type not in ['income', 'expense']:
+                        entry_type = 'expense' if original_amount < 0 else 'income'
+                else:
+                    entry_type = 'expense' if original_amount < 0 else 'income'
+                
+                # กำหนดหมวดหมู่
+                category = 'อื่นๆ'
+                if category_idx is not None and category_idx < len(values):
+                    cat = values[category_idx].strip()
+                    if cat:
+                        category = cat
+                
+                # กำหนดรายละเอียด
+                description = ''
+                if desc_idx is not None and desc_idx < len(values):
+                    description = values[desc_idx].strip()
+                
+                # บันทึกข้อมูล
+                entry = Entry(
+                    date=entry_date,
+                    type=entry_type,
+                    category=category,
+                    description=description,
+                    amount=amount,
+                    created_by=int(current_user.get_id())
+                )
+                s.add(entry)
+                success_count += 1
+                
+            except Exception as e:
+                error_count += 1
+                continue
+        
+        # บันทึกการเปลี่ยนแปลง
+        if success_count > 0:
+            s.commit()
+        
+        s.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'นำเข้าข้อมูลสำเร็จ {success_count} รายการ',
+            'success_count': success_count,
+            'error_count': error_count
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'เกิดข้อผิดพลาด: {str(e)}'})
 
 if __name__ == '__main__':
     # Initialize database tables

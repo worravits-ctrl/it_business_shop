@@ -5,109 +5,167 @@
     <h1 class="display-6 fw-bold text-primary mb-0">
       <i class="fas fa-exchange-alt me-3"></i>นำเข้า / ส่งออกข้อมูล
     </h1>
-    <p class="text-muted">จัดการข้อมูลรายรับ-รายจ่ายด้วยไฟล์ CSV</p>
+    <p class="text-muted">จัดการข้อมูลรายรับ-รายจ่ายด้วยไฟล์ CSV แบบง่ายและสะดวก</p>
+  </div>
+</div>
+
+<!-- ปุ่มโหลดไฟล์ตัวอย่าง -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+      <i class="fas fa-lightbulb fa-2x me-3"></i>
+      <div class="flex-grow-1">
+        <h6 class="alert-heading mb-1">💡 ใหม่! ดาวน์โหลดไฟล์ตัวอย่าง</h6>
+        <p class="mb-2">หากไม่แน่ใจรูปแบบไฟล์ CSV ให้ดาวน์โหลดไฟล์ตัวอย่างเพื่อดูรูปแบบที่ถูกต้อง</p>
+        <a href="{{ url_for('download_sample_csv') }}" class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-download me-1"></i>ดาวน์โหลดไฟล์ตัวอย่าง
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="row">
   <div class="col-lg-6 mb-4">
-    <div class="card h-100">
-      <div class="card-header bg-success text-white">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-gradient bg-success text-white">
         <h5 class="card-title mb-0">
           <i class="fas fa-file-export me-2"></i>ส่งออกข้อมูล
         </h5>
       </div>
       <div class="card-body text-center">
-        <i class="fas fa-download fa-4x text-success mb-3"></i>
-        <h6 class="card-title">ดาวน์โหลดข้อมูลทั้งหมด</h6>
-        <p class="card-text text-muted">
-          ส่งออกข้อมูลรายรับ-รายจ่ายทั้งหมดเป็นไฟล์ CSV สำหรับสำรองข้อมูลหรือวิเคราะห์เพิ่มเติม
-        </p>
-        <a href="{{ url_for('export_csv') }}" class="btn btn-success btn-lg">
-          <i class="fas fa-download me-2"></i>ส่งออก CSV
+        <div class="mb-4">
+          <i class="fas fa-download fa-4x text-success mb-3"></i>
+          <h6 class="card-title">📥 ดาวน์โหลดข้อมูลทั้งหมด</h6>
+          <p class="card-text text-muted">
+            ส่งออกข้อมูลรายรับ-รายจ่ายทั้งหมดเป็นไฟล์ CSV<br>
+            สำหรับสำรองข้อมูลหรือวิเคราะห์เพิ่มเติม
+          </p>
+        </div>
+        <a href="{{ url_for('export_csv') }}" class="btn btn-success btn-lg w-100 mb-3">
+          <i class="fas fa-download me-2"></i>ส่งออกข้อมูล CSV
         </a>
       </div>
       <div class="card-footer bg-light">
-        <small class="text-muted">
-          <i class="fas fa-info-circle me-1"></i>
-          ไฟล์จะมีข้อมูล: วันที่, ประเภท, หมวดหมู่, รายละเอียด, จำนวนเงิน
+        <small class="text-success">
+          <i class="fas fa-check-circle me-1"></i>
+          <strong>รวม:</strong> วันที่, ประเภท, หมวดหมู่, รายละเอียด, จำนวนเงิน
         </small>
       </div>
     </div>
   </div>
   
   <div class="col-lg-6 mb-4">
-    <div class="card h-100">
-      <div class="card-header bg-primary text-white">
+    <div class="card h-100 shadow-sm">
+      <div class="card-header bg-gradient bg-primary text-white">
         <h5 class="card-title mb-0">
           <i class="fas fa-file-import me-2"></i>นำเข้าข้อมูล
         </h5>
       </div>
       <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-          <div class="text-center mb-3">
+        <form method="post" enctype="multipart/form-data" id="csvForm">
+          <div class="text-center mb-4">
             <i class="fas fa-upload fa-4x text-primary mb-3"></i>
-            <h6 class="card-title">อัปโหลดไฟล์ CSV</h6>
+            <h6 class="card-title">📤 อัปโหลดไฟล์ CSV</h6>
+            <p class="text-muted small">รองรับไฟล์ CSV ที่มีข้อมูลรายรับ-รายจ่าย</p>
           </div>
           
           <div class="mb-3">
-            <label for="csvFile" class="form-label">เลือกไฟล์ CSV</label>
-            <input type="file" name="file" id="csvFile" class="form-control" accept=".csv" required>
+            <label for="csvFile" class="form-label fw-bold">🗂️ เลือกไฟล์ CSV</label>
+            <input type="file" name="file" id="csvFile" class="form-control form-control-lg" accept=".csv" required>
             <div class="form-text">
-              <i class="fas fa-exclamation-triangle me-1"></i>
-              ไฟล์ต้องเป็นรูปแบบ CSV และมีคอลัมน์: date, type, category, description, amount
+              <i class="fas fa-info-circle me-1 text-primary"></i>
+              <strong>รูปแบบที่รองรับ:</strong> date, amount (จำเป็น) + type, category, description (ตัวเลือก)
             </div>
           </div>
           
           <div class="d-grid">
             <button type="submit" class="btn btn-primary btn-lg">
-              <i class="fas fa-upload me-2"></i>อัปโหลดและนำเข้า
+              <i class="fas fa-upload me-2"></i>อัปโหลดและนำเข้าข้อมูล
             </button>
+          </div>
+          
+          <div class="mt-3 text-center">
+            <small class="text-muted">
+              <i class="fas fa-shield-alt me-1"></i>
+              รองรับ encoding: UTF-8, TIS-620 | ขนาดไม่เกิน 10MB
+            </small>
           </div>
         </form>
       </div>
       <div class="card-footer bg-light">
-        <small class="text-muted">
-          <i class="fas fa-info-circle me-1"></i>
-          รูปแบบไฟล์: CSV, ขนาดไม่เกิน 10MB
-        </small>
+        <div class="row text-center">
+          <div class="col-6">
+            <small class="text-primary">
+              <i class="fas fa-calendar me-1"></i>
+              <strong>วันที่:</strong> YYYY-MM-DD<br>หรือ DD/MM/YYYY
+            </small>
+          </div>
+          <div class="col-6">
+            <small class="text-success">
+              <i class="fas fa-coins me-1"></i>
+              <strong>จำนวนเงิน:</strong> ตัวเลขธรรมดา<br>รองรับ comma (,)
+            </small>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- คำแนะนำการใช้งาน -->
+<!-- คำแนะนำการใช้งานแบบง่าย -->
 <div class="row mt-4">
   <div class="col-12">
-    <div class="card">
-      <div class="card-header bg-info text-white">
+    <div class="card shadow-sm">
+      <div class="card-header bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
         <h5 class="card-title mb-0">
-          <i class="fas fa-question-circle me-2"></i>คำแนะนำการใช้งาน
+          <i class="fas fa-rocket me-2"></i>📚 วิธีการใช้งานแบบง่าย
         </h5>
       </div>
       <div class="card-body">
         <div class="row">
-          <div class="col-md-6">
-            <h6 class="fw-bold text-success">
-              <i class="fas fa-file-export me-1"></i>การส่งออกข้อมูล
-            </h6>
-            <ul class="list-unstyled">
-              <li><i class="fas fa-check text-success me-2"></i>คลิกปุ่ม "ส่งออก CSV"</li>
-              <li><i class="fas fa-check text-success me-2"></i>ไฟล์จะดาวน์โหลดอัตโนมัติ</li>
-              <li><i class="fas fa-check text-success me-2"></i>เปิดด้วย Excel หรือ Google Sheets</li>
-              <li><i class="fas fa-check text-success me-2"></i>ใช้สำหรับสำรองข้อมูลหรือวิเคราะห์</li>
-            </ul>
+          <div class="col-md-6 mb-3">
+            <div class="border-start border-success border-4 ps-3">
+              <h6 class="fw-bold text-success mb-2">
+                <i class="fas fa-download me-1"></i>🎯 ส่งออกข้อมูล (ง่ายมาก!)
+              </h6>
+              <ol class="list-unstyled mb-0">
+                <li class="mb-1"><span class="badge bg-success me-2">1</span>คลิกปุ่ม "ส่งออกข้อมูล CSV"</li>
+                <li class="mb-1"><span class="badge bg-success me-2">2</span>ไฟล์จะดาวน์โหลดทันที</li>
+                <li class="mb-1"><span class="badge bg-success me-2">3</span>เปิดด้วย Excel หรือ Google Sheets</li>
+              </ol>
+            </div>
           </div>
-          <div class="col-md-6">
-            <h6 class="fw-bold text-primary">
-              <i class="fas fa-file-import me-1"></i>การนำเข้าข้อมูล
-            </h6>
-            <ul class="list-unstyled">
-              <li><i class="fas fa-check text-primary me-2"></i>เตรียมไฟล์ CSV ตามรูปแบบ</li>
-              <li><i class="fas fa-check text-primary me-2"></i>คอลัมน์: date, type, category, description, amount</li>
-              <li><i class="fas fa-check text-primary me-2"></i>วันที่รูปแบบ: YYYY-MM-DD</li>
-              <li><i class="fas fa-check text-primary me-2"></i>ประเภท: income หรือ expense</li>
-            </ul>
+          
+          <div class="col-md-6 mb-3">
+            <div class="border-start border-primary border-4 ps-3">
+              <h6 class="fw-bold text-primary mb-2">
+                <i class="fas fa-upload me-1"></i>🎯 นำเข้าข้อมูล (ง่ายสุดๆ!)
+              </h6>
+              <ol class="list-unstyled mb-0">
+                <li class="mb-1"><span class="badge bg-primary me-2">1</span>ดาวน์โหลดไฟล์ตัวอย่าง (ด้านบน)</li>
+                <li class="mb-1"><span class="badge bg-primary me-2">2</span>แก้ไขข้อมูลตามต้องการ</li>
+                <li class="mb-1"><span class="badge bg-primary me-2">3</span>อัปโหลดไฟล์และรอผลลัพธ์</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        
+        <hr class="my-3">
+        
+        <div class="alert alert-light border-warning" role="alert">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="fas fa-magic fa-2x text-warning"></i>
+            </div>
+            <div class="col">
+              <h6 class="alert-heading mb-1 text-warning">✨ ระบบอัจฉริยะ</h6>
+              <p class="mb-0 small">
+                🧠 <strong>รูปแบบวันที่ยืดหยุ่น:</strong> รองรับ 2025-10-18, 18/10/2025, 18-10-2025<br>
+                🎨 <strong>ตรวจจับประเภทอัตโนมัติ:</strong> หากไม่ระบุ income/expense จะดูจากจำนวนเงิน (+/-)<br>
+                🛠️ <strong>แก้ไขข้อผิดพลาดอัตโนมัติ:</strong> ข้าม/แก้ไขข้อมูลที่ผิดพลาดและรายงานให้ทราบ
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -115,26 +173,112 @@
   </div>
 </div>
 
-<!-- ตัวอย่างรูปแบบไฟล์ CSV -->
+<!-- ตัวอย่างรูปแบบไฟล์ CSV แบบสวยงาม -->
 <div class="row mt-4">
   <div class="col-12">
-    <div class="card">
-      <div class="card-header bg-warning text-dark">
+    <div class="card shadow-sm">
+      <div class="card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
         <h5 class="card-title mb-0">
-          <i class="fas fa-file-csv me-2"></i>ตัวอย่างรูปแบบไฟล์ CSV
+          <i class="fas fa-file-csv me-2"></i>📄 ตัวอย่างรูปแบบไฟล์ CSV
         </h5>
       </div>
       <div class="card-body">
-        <pre class="bg-light p-3 rounded"><code>date,type,category,description,amount
-2025-10-17,income,ถ่ายเอกสาร A4 ขาวดำ,ถ่ายเอกสาร 50 แผ่น,50
-2025-10-17,expense,ค่าหมึก,ซื้อหมึกเครื่องปริ้นเตอร์,300
-2025-10-16,income,print A4 สี,พิมพ์โปสเตอร์,120</code></pre>
-        <div class="alert alert-warning mb-0" role="alert">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          <strong>หมายเหตุ:</strong> ให้ระวังการใช้เครื่องหมายจุลภาค (,) ในข้อความ อาจทำให้ไฟล์อ่านไม่ถูกต้อง
+        <div class="mb-3">
+          <h6 class="text-primary mb-2">
+            <i class="fas fa-eye me-1"></i>ตัวอย่างข้อมูลที่ถูกต้อง:
+          </h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead class="table-dark">
+                <tr>
+                  <th>date</th>
+                  <th>type</th>
+                  <th>category</th>
+                  <th>description</th>
+                  <th>amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="table-success">
+                  <td><code>2025-10-18</code></td>
+                  <td><code>income</code></td>
+                  <td><code>ถ่ายเอกสาร</code></td>
+                  <td><code>ถ่ายเอกสาร A4 ขาวดำ 50 แผ่น</code></td>
+                  <td><code>50</code></td>
+                </tr>
+                <tr class="table-info">
+                  <td><code>18/10/2025</code></td>
+                  <td><code>income</code></td>
+                  <td><code>พิมพ์เอกสาร</code></td>
+                  <td><code>พิมพ์เอกสาร A4 สี 10 แผ่น</code></td>
+                  <td><code>120</code></td>
+                </tr>
+                <tr class="table-warning">
+                  <td><code>2025-10-17</code></td>
+                  <td><code>expense</code></td>
+                  <td><code>ค่าวัสดุ</code></td>
+                  <td><code>ซื้อกระดาษ A4</code></td>
+                  <td><code>300</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="alert alert-success" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-check-circle me-1"></i>✅ ข้อมูลที่จำเป็น (ต้องมี)
+              </h6>
+              <ul class="mb-0 small">
+                <li><strong>date:</strong> วันที่ (YYYY-MM-DD หรือ DD/MM/YYYY)</li>
+                <li><strong>amount:</strong> จำนวนเงิน (ตัวเลข)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="alert alert-info" role="alert">
+              <h6 class="alert-heading">
+                <i class="fas fa-plus-circle me-1"></i>➕ ข้อมูลเสริม (ตัวเลือก)
+              </h6>
+              <ul class="mb-0 small">
+                <li><strong>type:</strong> income หรือ expense</li>
+                <li><strong>category:</strong> หมวดหมู่</li>
+                <li><strong>description:</strong> รายละเอียด</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="alert alert-warning" role="alert">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="fas fa-lightbulb fa-2x text-warning"></i>
+            </div>
+            <div class="col">
+              <h6 class="alert-heading mb-1">💡 เคล็ดลับ</h6>
+              <ul class="mb-0 small">
+                <li><strong>ไม่ต้องกังวล:</strong> หากไม่มี type ระบบจะตรวจจับอัตโนมัติจากจำนวนเงิน</li>
+                <li><strong>รูปแบบยืดหยุ่น:</strong> รองรับรูปแบบวันที่หลากหลาย</li>
+                <li><strong>ข้อผิดพลาด:</strong> ระบบจะรายงานและข้ามข้อมูลที่ผิดพลาด</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+document.getElementById('csvForm').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('csvFile');
+    if (fileInput.files.length > 0) {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังประมวลผล...';
+        submitBtn.disabled = true;
+    }
+});
+</script>
 {% endblock %}

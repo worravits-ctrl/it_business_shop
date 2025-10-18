@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h1 class="display-6 fw-bold text-primary">
+        <i class="fas fa-file-csv me-3"></i>นำเข้าข้อมูล CSV
+      </h1>
+      <p class="text-muted">อัปโหลดไฟล์ CSV เพื่อนำเข้าข้อมูลรายรับ-รายจ่าย</p>
+    </div>
+  </div>
+
+  <!-- คำแนะนำ -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <h5><i class="fas fa-info-circle me-2"></i>รูปแบบไฟล์ CSV</h5>
+        <p class="mb-2"><strong>คอลัมน์ที่จำเป็น:</strong> date, amount</p>
+        <p class="mb-2"><strong>คอลัมน์เสริม:</strong> type (income/expense), category, description</p>
+        <p class="mb-0"><strong>รูปแบบวันที่:</strong> 2025-10-18 หรือ 18/10/2025 หรือ 18-10-2025</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ฟอร์มอัปโหลด -->
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-upload me-2"></i>เลือกไฟล์ CSV</h5>
+        </div>
+        <div class="card-body">
+          <form id="csvUploadForm" method="POST" enctype="multipart/form-data">
+            <div class="mb-4">
+              <label for="csvFile" class="form-label fw-bold">ไฟล์ CSV:</label>
+              <input type="file" class="form-control form-control-lg" id="csvFile" name="csvfile" accept=".csv" required>
+              <div class="form-text">เลือกไฟล์ .csv ที่ต้องการนำเข้า</div>
+            </div>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                <i class="fas fa-cloud-upload-alt me-2"></i>เริ่มนำเข้าข้อมูล
+              </button>
+              <a href="{{ url_for('entries') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-2"></i>ยกเลิก
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- แสดงสถานะการนำเข้า -->
+  <div class="row mt-4" id="statusArea" style="display: none;">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="fas fa-tasks me-2"></i>สถานะการนำเข้า</h5>
+        </div>
+        <div class="card-body">
+          <div id="progressContainer" class="mb-3">
+            <div class="progress" style="height: 30px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                   id="progressBar" 
+                   role="progressbar" 
+                   style="width: 0%">
+                0%
+              </div>
+            </div>
+          </div>
+          <div id="statusMessage" class="alert alert-info">
+            <i class="fas fa-spinner fa-spin me-2"></i>กำลังประมวลผล...
+          </div>
+          <div id="resultDetails"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ตัวอย่างไฟล์ CSV -->
+  <div class="row mt-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0"><i class="fas fa-file-code me-2"></i>ตัวอย่างไฟล์ CSV</h5>
+        </div>
+        <div class="card-body">
+          <h6>แบบขั้นต่ำ (date + amount):</h6>
+          <pre class="bg-light p-3 rounded"><code>date,amount
+2025-10-18,100
+2025-10-19,200</code></pre>
+          
+          <h6 class="mt-3">แบบเต็ม:</h6>
+          <pre class="bg-light p-3 rounded"><code>date,type,category,description,amount
+2025-10-18,income,ถ่ายเอกสาร,ถ่ายเอกสาร A4,50
+2025-10-19,expense,ค่าวัสดุ,ซื้อกระดาษ,300</code></pre>
+          
+          <div class="mt-3">
+            <a href="{{ url_for('download_sample_csv') }}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-download me-1"></i>ดาวน์โหลดไฟล์ตัวอย่าง
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('csvUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('csvFile');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const statusArea = document.getElementById('statusArea');
+    const progressBar = document.getElementById('progressBar');
+    const statusMessage = document.getElementById('statusMessage');
+    const resultDetails = document.getElementById('resultDetails');
+    
+    // ตรวจสอบไฟล์
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('กรุณาเลือกไฟล์ CSV');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        alert('กรุณาเลือกไฟล์ .csv เท่านั้น');
+        return;
+    }
+    
+    // แสดงสถานะ
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังอัปโหลด...';
+    statusArea.style.display = 'block';
+    progressBar.style.width = '30%';
+    progressBar.textContent = '30%';
+    
+    // สร้าง FormData
+    const formData = new FormData();
+    formData.append('csvfile', file);
+    
+    // ส่งข้อมูล
+    fetch('{{ url_for("csv_import") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100%';
+        
+        if (data.success) {
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-success');
+            statusMessage.className = 'alert alert-success';
+            statusMessage.innerHTML = `<i class="fas fa-check-circle me-2"></i>${data.message}`;
+            
+            // แสดงรายละเอียด
+            resultDetails.innerHTML = `
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="card bg-success text-white mb-2">
+                            <div class="card-body">
+                                <h3>${data.success_count}</h3>
+                                <p class="mb-0">รายการสำเร็จ</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-warning text-dark mb-2">
+                            <div class="card-body">
+                                <h3>${data.error_count}</h3>
+                                <p class="mb-0">รายการข้าม</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Redirect หลังจาก 2 วินาที
+            setTimeout(() => {
+                window.location.href = '{{ url_for("entries") }}';
+            }, 2000);
+        } else {
+            progressBar.classList.remove('progress-bar-animated');
+            progressBar.classList.add('bg-danger');
+            statusMessage.className = 'alert alert-danger';
+            statusMessage.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${data.message}`;
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>เริ่มนำเข้าข้อมูล';
+        }
+    })
+    .catch(error => {
+        progressBar.classList.remove('progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+        statusMessage.className = 'alert alert-danger';
+        statusMessage.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>เกิดข้อผิดพลาด: ${error}`;
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>เริ่มนำเข้าข้อมูล';
+    });
+});
+</script>
+{% endblock %}
