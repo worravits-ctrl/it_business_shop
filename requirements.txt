@@ -1,2 +1,7 @@
 Flask==2.3.2
-waitress==3.0.2
+Flask-Login==0.6.2
+Flask-WTF==1.1.1
+SQLAlchemy==2.0.19
+Werkzeug==2.3.7
+pandas==2.2.3
+python-dotenv==1.0.0

@@ -14,17 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     });
 
-    // Add loading state to buttons (except file upload forms)
+    // Add loading state to buttons
     const submitButtons = document.querySelectorAll('button[type="submit"]');
     submitButtons.forEach(function(button) {
-        // Skip if this is a file upload form
-        const form = button.closest('form');
-        if (form && form.enctype === 'multipart/form-data') {
-            console.log('Skipping loading state for file upload form');
-            return;
-        }
-        
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function() {
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>กำลังประมวลผล...';
             button.disabled = true;
@@ -60,33 +53,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // (Removed form delete handler - now using AJAX buttons only)
+    // Confirmation dialogs
+    const deleteButtons = document.querySelectorAll('button[onclick*="confirm"]');
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function(e) {
+            if (!confirm('คุณแน่ใจที่จะลบรายการนี้หรือไม่?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
 
-    // File upload preview and validation
+    // File upload preview
     const fileInputs = document.querySelectorAll('input[type="file"]');
     fileInputs.forEach(function(input) {
         input.addEventListener('change', function() {
             const file = this.files[0];
-            console.log('File selected:', file);
-            
             if (file) {
-                // Check file type
-                if (!file.name.toLowerCase().endsWith('.csv')) {
-                    alert('กรุณาเลือกไฟล์ .csv เท่านั้น');
-                    this.value = '';
-                    return;
-                }
-                
-                // Check file size (max 10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('ไฟล์มีขนาดใหญ่เกินไป (เกิน 10MB)');
-                    this.value = '';
-                    return;
-                }
-                
                 const fileInfo = document.createElement('div');
-                fileInfo.className = 'mt-2 text-success small';
-                fileInfo.innerHTML = `<i class="fas fa-check me-1"></i>ไฟล์: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                fileInfo.className = 'mt-2 text-muted small';
+                fileInfo.innerHTML = `<i class="fas fa-file me-1"></i>ไฟล์: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
                 
                 // Remove existing file info
                 const existingInfo = this.parentNode.querySelector('.file-info');
@@ -96,43 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 fileInfo.classList.add('file-info');
                 this.parentNode.appendChild(fileInfo);
-                
-                console.log('File validated successfully:', file.name, file.size);
             }
-        });
-    });
-
-    // Debug form submission for CSV import
-    const importForms = document.querySelectorAll('form[enctype="multipart/form-data"]');
-    console.log('Found file upload forms:', importForms.length);
-    
-    importForms.forEach(function(form, index) {
-        console.log(`Setting up form ${index}:`, form);
-        form.addEventListener('submit', function(e) {
-            console.log('=== FORM SUBMIT EVENT ===');
-            const fileInput = form.querySelector('input[type="file"]');
-            const file = fileInput ? fileInput.files[0] : null;
-            
-            console.log('Form action:', form.action || 'default');
-            console.log('Form method:', form.method);
-            console.log('File input:', fileInput);
-            console.log('Selected file:', file);
-            
-            if (!file) {
-                console.log('NO FILE - STOPPING SUBMISSION');
-                e.preventDefault();
-                alert('กรุณาเลือกไฟล์ CSV');
-                return false;
-            }
-            
-            if (!file.name.toLowerCase().endsWith('.csv')) {
-                console.log('NOT CSV FILE - STOPPING SUBMISSION');
-                e.preventDefault();
-                alert('กรุณาเลือกไฟล์ .csv เท่านั้น');
-                return false;
-            }
-            
-            console.log('Form submission validated, proceeding...');
         });
     });
 });
@@ -145,75 +95,6 @@ function formatCurrency(amount) {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount);
-}
-
-// AJAX Delete Function
-function deleteEntry(entryId) {
-    if (!confirm(`ต้องการลบรายการ ID: ${entryId} หรือไม่?`)) {
-        return false;
-    }
-    
-    console.log(`Attempting to delete entry ID: ${entryId}`);
-    
-    fetch(`/entry/${entryId}/delete`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-    })
-    .then(response => {
-        console.log('Delete response:', response.status);
-        if (response.ok) {
-            showToast('ลบรายการเรียบร้อยแล้ว', 'success');
-            // Reload page to show updated list
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            showToast('เกิดข้อผิดพลาดในการลบ', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Delete error:', error);
-        showToast('เกิดข้อผิดพลาดในการลบ: ' + error, 'error');
-    });
-    
-    return false;
-}
-
-// AJAX Delete All Function
-function deleteAllEntries() {
-    if (!confirm('⚠️ คุณแน่ใจที่จะลบรายการทั้งหมดหรือไม่?\n\nการกระทำนี้ไม่สามารถยกเลิกได้!')) {
-        return false;
-    }
-    
-    // Double confirmation
-    if (!confirm('❗ ยืนยันอีกครั้ง: ลบรายการทั้งหมดจริงหรือ?\n\nข้อมูลทั้งหมดจะหายไปถาวร!')) {
-        return false;
-    }
-    
-    console.log('Attempting to delete all entries');
-    
-    fetch('/entries/delete_all', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-    })
-    .then(response => {
-        console.log('Delete all response:', response.status);
-        if (response.ok) {
-            showToast('ลบรายการทั้งหมดเรียบร้อยแล้ว', 'success');
-            // Reload page to show updated list
-            setTimeout(() => window.location.reload(), 1500);
-        } else {
-            showToast('เกิดข้อผิดพลาดในการลบรายการทั้งหมด', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Delete all error:', error);
-        showToast('เกิดข้อผิดพลาดในการลบรายการทั้งหมด: ' + error, 'error');
-    });
-    
-    return false;
 }
 
 function showToast(message, type = 'info') {

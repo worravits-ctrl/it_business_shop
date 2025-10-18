@@ -8,15 +8,9 @@
     <p class="text-muted">จัดการรายรับ-รายจ่ายของร้าน</p>
   </div>
   <div class="col-md-4 text-end">
-    <div class="btn-group" role="group">
-      <a href="{{ url_for('entry_new') }}" class="btn btn-success btn-lg">
-        <i class="fas fa-plus me-2"></i>เพิ่มรายการใหม่
-      </a>
-      <button onclick="deleteAllEntries()" class="btn btn-danger btn-lg" 
-              title="ลบรายการทั้งหมด">
-        <i class="fas fa-trash-alt me-2"></i>ลบทั้งหมด
-      </button>
-    </div>
+    <a href="{{ url_for('entry_new') }}" class="btn btn-success btn-lg">
+      <i class="fas fa-plus me-2"></i>เพิ่มรายการใหม่
+    </a>
   </div>
 </div>
 
@@ -73,11 +67,12 @@
                 <a href="{{ url_for('entry_edit', id=it.id) }}" class="btn btn-sm btn-outline-primary">
                   <i class="fas fa-edit"></i>
                 </a>
-                <!-- Delete button (Trash only) -->
-                <button onclick="deleteEntry({{ it.id }})" class="btn btn-sm btn-outline-danger" 
-                        title="ลบรายการ ID: {{ it.id }}">
-                  <i class="fas fa-trash"></i>
-                </button>
+                <form action="{{ url_for('entry_delete', id=it.id) }}" method="post" style="display: inline;" 
+                      onsubmit="return confirm('ต้องการลบรายการนี้หรือไม่?')">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </form>
               </div>
             </td>
           </tr>
