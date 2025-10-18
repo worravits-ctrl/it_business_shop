@@ -136,12 +136,42 @@
 <div class="row">
   <div class="col-12">
     <div class="card">
-      <div class="card-header bg-primary text-white">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h5 class="card-title mb-0">
-          <i class="fas fa-chart-bar me-2"></i>แนวโน้มรายรับ-รายจ่าย (7 วันย้อนหลัง)
+          <i class="fas fa-chart-bar me-2"></i>แนวโน้มรายรับ-รายจ่าย รายเดือน
         </h5>
+        <!-- Dropdown สำหรับเลือกเดือน/ปี -->
+        <div class="d-flex gap-2">
+          <select id="monthSelect" class="form-select form-select-sm" style="width: auto;">
+            <option value="">เลือกเดือน</option>
+            <option value="1">มกราคม</option>
+            <option value="2">กุมภาพันธ์</option>
+            <option value="3">มีนาคม</option>
+            <option value="4">เมษายน</option>
+            <option value="5">พฤษภาคม</option>
+            <option value="6">มิถุนายน</option>
+            <option value="7">กรกฎาคม</option>
+            <option value="8">สิงหาคม</option>
+            <option value="9">กันยายน</option>
+            <option value="10">ตุลาคม</option>
+            <option value="11">พฤศจิกายน</option>
+            <option value="12">ธันวาคม</option>
+          </select>
+          <select id="yearSelect" class="form-select form-select-sm" style="width: auto;">
+            <option value="">เลือกปี</option>
+          </select>
+          <button id="updateChart" class="btn btn-light btn-sm">
+            <i class="fas fa-sync-alt"></i> อัปเดต
+          </button>
+        </div>
       </div>
       <div class="card-body">
+        <div id="chartLoading" class="text-center py-4 d-none">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">กำลังโหลด...</span>
+          </div>
+          <p class="mt-2 text-muted">กำลังโหลดข้อมูล...</p>
+        </div>
         <canvas id="incomeExpenseChart" width="400" height="150"></canvas>
       </div>
     </div>
@@ -205,93 +235,190 @@
 </div>
 
 <script>
+let chartInstance = null;
+
 document.addEventListener('DOMContentLoaded', function() {
   const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
+  const updateButton = document.getElementById('updateChart');
+  const chartLoading = document.getElementById('chartLoading');
   
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: {{ labels | safe }},
-      datasets: [{
-        label: 'รายรับ',
-        data: {{ chart_incomes | safe }},
-        borderColor: '#059669',
-        backgroundColor: 'rgba(5, 150, 105, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#059669',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointRadius: 6
-      }, {
-        label: 'รายจ่าย',
-        data: {{ chart_expenses | safe }},
-        borderColor: '#dc2626',
-        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointBackgroundColor: '#dc2626',
-        pointBorderColor: '#ffffff',
-        pointBorderWidth: 2,
-        pointRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            padding: 20,
-            font: {
-              size: 14,
-              weight: '600'
-            }
-          }
-        }
+  // ตั้งค่าเริ่มต้นเป็นเดือน/ปีปัจจุบัน
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  
+  monthSelect.value = currentMonth;
+  
+  // โหลดปีที่มีข้อมูล
+  loadAvailableYears();
+  
+  // สร้าง chart เริ่งต้น
+  initChart();
+  
+  // Event listeners
+  updateButton.addEventListener('click', updateChart);
+  monthSelect.addEventListener('change', updateChart);
+  yearSelect.addEventListener('change', updateChart);
+  
+  function initChart() {
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'รายรับ',
+          data: [],
+          borderColor: '#059669',
+          backgroundColor: 'rgba(5, 150, 105, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#059669',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }, {
+          label: 'รายจ่าย',
+          data: [],
+          borderColor: '#dc2626',
+          backgroundColor: 'rgba(220, 38, 38, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#dc2626',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 2,
+          pointRadius: 6
+        }]
       },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: 'rgba(0, 0, 0, 0.1)'
-          },
-          ticks: {
-            callback: function(value) {
-              return value.toLocaleString() + ' ฿';
-            },
-            font: {
-              size: 12
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 20,
+              font: {
+                size: 14,
+                weight: '600'
+              }
             }
           }
         },
-        x: {
-          grid: {
-            color: 'rgba(0, 0, 0, 0.1)'
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString() + ' ฿';
+              },
+              font: {
+                size: 12
+              }
+            }
           },
-          ticks: {
-            font: {
-              size: 12
+          x: {
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            },
+            ticks: {
+              font: {
+                size: 12
+              }
             }
           }
-        }
-      },
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-      elements: {
-        point: {
-          hoverRadius: 8
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        elements: {
+          point: {
+            hoverRadius: 8
+          }
         }
       }
+    });
+    
+    // โหลดข้อมูลเริ่มต้น
+    updateChart();
+  }
+  
+  async function loadAvailableYears() {
+    try {
+      const response = await fetch('/api/available-months');
+      const data = await response.json();
+      
+      if (data.available) {
+        const years = [...new Set(data.available.map(item => item.year))].sort((a, b) => b - a);
+        
+        yearSelect.innerHTML = '<option value="">เลือกปี</option>';
+        years.forEach(year => {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = year + 543; // แสดงเป็นปี พ.ศ.
+          if (year === currentYear) {
+            option.selected = true;
+          }
+          yearSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading available years:', error);
+      // ถ้าโหลดไม่ได้ ใช้ปีปัจจุบัน
+      yearSelect.innerHTML = `<option value="${currentYear}" selected>${currentYear + 543}</option>`;
     }
-  });
+  }
+  
+  async function updateChart() {
+    const selectedMonth = monthSelect.value;
+    const selectedYear = yearSelect.value;
+    
+    if (!selectedMonth || !selectedYear) {
+      return;
+    }
+    
+    // แสดง loading
+    chartLoading.classList.remove('d-none');
+    chartInstance.canvas.style.opacity = '0.3';
+    
+    try {
+      const response = await fetch(`/api/chart-data?month=${selectedMonth}&year=${selectedYear}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // อัปเดต chart
+      chartInstance.data.labels = data.labels;
+      chartInstance.data.datasets[0].data = data.incomes;
+      chartInstance.data.datasets[1].data = data.expenses;
+      chartInstance.update('active');
+      
+      // แสดงเดือน/ปีที่เลือกในหัวข้อ
+      const monthNames = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
+                         'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      const title = document.querySelector('.card-header h5');
+      title.innerHTML = `<i class="fas fa-chart-bar me-2"></i>แนวโน้มรายรับ-รายจ่าย: ${monthNames[selectedMonth]} ${parseInt(selectedYear) + 543}`;
+      
+    } catch (error) {
+      console.error('Error updating chart:', error);
+      alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message);
+    } finally {
+      // ซ่อน loading
+      chartLoading.classList.add('d-none');
+      chartInstance.canvas.style.opacity = '1';
+    }
+  }
 });
 </script>
 {% endblock %}

@@ -248,6 +248,84 @@ def dashboard():
     except Exception as e:
         return f'<h1>Dashboard Error</h1><p>{str(e)}</p><p><a href="/test">ทดสอบเซิร์ฟเวอร์</a></p>'
 
+@app.route('/api/chart-data')
+@login_required
+def chart_data():
+    try:
+        selected_month = request.args.get('month', date.today().month, type=int)
+        selected_year = request.args.get('year', date.today().year, type=int)
+        
+        s = Session()
+        
+        # คำนวณจำนวนวันในเดือนที่เลือก
+        import calendar
+        days_in_month = calendar.monthrange(selected_year, selected_month)[1]
+        
+        # สร้างรายการวันทั้งเดือน
+        dates = []
+        labels = []
+        chart_incomes = []
+        chart_expenses = []
+        
+        for day in range(1, days_in_month + 1):
+            target_date = date(selected_year, selected_month, day)
+            dates.append(target_date)
+            labels.append(f"{day}/{selected_month}")
+            
+            # ดึงข้อมูลรายวัน
+            daily_incomes = s.query(Entry).filter(
+                Entry.date == target_date,
+                Entry.type == 'income'
+            ).all()
+            
+            daily_expenses = s.query(Entry).filter(
+                Entry.date == target_date, 
+                Entry.type == 'expense'
+            ).all()
+            
+            inc_sum = sum(e.amount for e in daily_incomes)
+            exp_sum = sum(e.amount for e in daily_expenses)
+            
+            chart_incomes.append(inc_sum)
+            chart_expenses.append(exp_sum)
+        
+        s.close()
+        
+        return jsonify({
+            'labels': labels,
+            'incomes': chart_incomes,
+            'expenses': chart_expenses,
+            'month': selected_month,
+            'year': selected_year
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/available-months')
+@login_required 
+def available_months():
+    try:
+        s = Session()
+        # ดึงข้อมูลเดือน/ปีที่มีข้อมูลในฐานข้อมูล
+        entries = s.query(Entry).all()
+        months_years = set()
+        
+        for entry in entries:
+            months_years.add((entry.date.year, entry.date.month))
+        
+        s.close()
+        
+        # จัดเรียงและแปลงเป็น list
+        available = sorted(list(months_years), reverse=True)
+        
+        return jsonify({
+            'available': [{'year': year, 'month': month} for year, month in available]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/entries')
 @login_required
 def entries():
