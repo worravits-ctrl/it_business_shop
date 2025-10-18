@@ -12,8 +12,16 @@ from models import Base, User, Entry
 from forms import LoginForm, EntryForm, INCOME_CHOICES, EXPENSE_CHOICES
 
 # Database setup  
-DB_PATH = os.path.join(os.path.dirname(__file__), 'business.db')
-engine = create_engine(f'sqlite:///{DB_PATH}', connect_args={"check_same_thread": False})
+# For Railway deployment, use persistent volume or PostgreSQL
+DB_URL = os.environ.get('DATABASE_URL')
+if DB_URL:
+    # Production: Use PostgreSQL on Railway
+    engine = create_engine(DB_URL, connect_args={})
+else:
+    # Development: Use SQLite
+    DB_PATH = os.path.join(os.path.dirname(__file__), 'business.db')
+    engine = create_engine(f'sqlite:///{DB_PATH}', connect_args={"check_same_thread": False})
+
 Session = scoped_session(sessionmaker(bind=engine))
 
 # Flask app setup
@@ -503,19 +511,50 @@ def delete_user():
         return jsonify({'success': False, 'message': str(e)})
 
 if __name__ == '__main__':
+    # Initialize database tables
+    Base.metadata.create_all(engine)
+    
+    # Create default admin user if not exists
+    try:
+        from werkzeug.security import generate_password_hash
+        s = Session()
+        admin_user = s.query(User).filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@itbusinessshop.com',
+                password_hash=generate_password_hash('admin123'),
+                role='admin',
+                is_active=True
+            )
+            s.add(admin_user)
+            s.commit()
+            print("Created default admin user: admin/admin123")
+        s.close()
+    except Exception as e:
+        print(f"Database setup error: {e}")
+    
+    # Get port from environment (Railway) or use default
+    port = int(os.environ.get('PORT', 8000))
+    host = '0.0.0.0' if os.environ.get('RAILWAY_ENVIRONMENT') else '127.0.0.1'
+    debug = not bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+    
     print("=" * 50)
     print("Starting IT Business Shop Flask Application")
     print("=" * 50)
-    print("Access the application at: http://127.0.0.1:8000")
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        print(f"🚂 Running on Railway (Production Mode)")
+        print(f"🌐 Host: {host}:{port}")
+    else:
+        print(f"🖥️  Running Locally (Development Mode)")
+        print(f"🌐 Access: http://{host}:{port}")
     print("Login credentials:")
     print("  Username: admin")
     print("  Password: admin123")
     print("=" * 50)
-    print("Press Ctrl+C to stop the server")
-    print("=" * 50)
     
     try:
-        app.run(debug=True, host='127.0.0.1', port=8000)
+        app.run(debug=debug, host=host, port=port)
     except KeyboardInterrupt:
         print("\nServer stopped by user")
     except Exception as e:
